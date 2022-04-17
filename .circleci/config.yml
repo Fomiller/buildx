@@ -1,0 +1,59 @@
+version: 2
+
+workflows:
+  version: 2
+  buildx-deploy:
+    jobs:
+      - build:
+          context: docker-credentials
+jobs:
+  build:
+    working_directory: /app
+
+    docker:
+      - image: docker:stable
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+
+    environment:
+      IMAGE_NAME: fomiller/megatainer
+      BUILDX_PLATFORMS: linux/amd64,linux/arm64
+
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: 18.09.3
+
+      - run:
+          name: Install buildx
+          command: |
+            BUILDX_BINARY_URL="https://github.com/docker/buildx/releases/download/v0.4.2/buildx-v0.4.2.linux-amd64"
+            apk add curl
+
+            curl --output docker-buildx \
+              --silent --show-error --location --fail --retry 3 \
+              "$BUILDX_BINARY_URL"
+
+            mkdir -p ~/.docker/cli-plugins
+
+            mv docker-buildx ~/.docker/cli-plugins/
+            chmod a+x ~/.docker/cli-plugins/docker-buildx
+
+            docker buildx install
+            docker run --rm --privileged tonistiigi/binfmt:latest --install "$BUILDX_PLATFORMS"
+
+      - run: 
+          name: Docker login 
+          command: |
+            docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+
+      - run:
+          name: Build and push Docker image
+          command: |
+            docker context create mybuilder
+            docker buildx create mybuilder --use
+            docker buildx build --push \
+              --platform $BUILDX_PLATFORMS \
+              -t $IMAGE_NAME:latest .
