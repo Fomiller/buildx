@@ -17,7 +17,7 @@ jobs:
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
 
     environment:
-      IMAGE_NAME: fomiller/megatainer
+      IMAGE_NAME: fomiller/builx-deployer
       BUILDX_PLATFORMS: linux/amd64,linux/arm64
 
     steps:
