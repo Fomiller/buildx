@@ -16,7 +16,3 @@ ARG DOCKER_VERSION
 FROM docker:${DOCKER_VERSION}
 
 COPY --from=fetcher /docker-buildx /usr/lib/docker/cli-plugins/docker-buildx
-
-RUN docker context create mybuilder
-RUN docker buildx create mybuilder --use
-
