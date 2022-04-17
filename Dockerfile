@@ -1,18 +1,13 @@
-ARG BUILDX_VERSION=0.4.2
-ARG DOCKER_VERSION=latest
+# ARG BUILDX_VERSION=0.4.2
+# ARG DOCKER_VERSION=stable
+ARG BUILDX_PLATFORMS=linux/arm64,linux/amd64
 
-FROM alpine AS fetcher
+FROM docker:stable
 
-RUN apk add curl
+COPY --from=docker/buildx-bin:latest /buildx /usr/libexec/docker/cli-plugins/docker-buildx
 
-ARG BUILDX_VERSION
-RUN curl -L \
-  --output /docker-buildx \
-  "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-amd64"
+RUN docker buildx version
+RUN docker context create buildx-builder
+RUN docker buildx create --use buildx-builder
 
-RUN chmod a+x /docker-buildx
-
-ARG DOCKER_VERSION
-FROM docker:${DOCKER_VERSION}
-
-COPY --from=fetcher /docker-buildx /usr/lib/docker/cli-plugins/docker-buildx
+CMD docker run --privileged --rm tonistiigi/binfmt --install all
