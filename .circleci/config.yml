@@ -8,8 +8,6 @@ workflows:
           context: docker-credentials
 jobs:
   build:
-    working_directory: /app
-
     docker:
       - image: cimg/base:stable
         auth:
